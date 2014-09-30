@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# scrapper.py is a scirpt that will scrap ads from willhaben and save it into db. 
+# Pages that are going to be scraped are defined in Configiration class 
 
 import requests
 import bs4
@@ -15,24 +17,24 @@ import hashlib
 
 def main(argv):
 
+	#load existing listings
+	pickle_listings = pickle.load( open( Configuration.pickle_db, "rb" ) )
+
+	db_items_count = len(pickle_listings)
+	
 	for url in Configuration.categories:
 		#parse all pages from given category
 		listings = parse_category(url);
-
-		#load existing listings
-	  	pickle_listings = pickle.load( open( Configuration.pickle_db, "rb" ) )
-
-	  	log('db count start - ' + str(len(pickle_listings)))
 
 	  	#add new listings into db
 	  	for listing in listings:
 	  		if listing not in pickle_listings:
 	  			pickle_listings[listing]= listings.get(listing)
 
-	  	#save listings
-		pickle.dump(pickle_listings, open( Configuration.pickle_db, "wb" ))
+	#save listings
+	pickle.dump(pickle_listings, open( Configuration.pickle_db, "wb" ))
 
-	  	log('db count end - ' + str(len(pickle_listings)))
+	log('Fetched ' + str(len(pickle_listings)-db_items_count) + ' items')
 
 def parse_category(category_url):
 	page = 1
@@ -80,7 +82,7 @@ def parse_page(url):
 	for result in results:
 		listing = parse_listing(result)
 		if listing is not type(None):
-			hash = listing['hash']=hashlib.sha224(listing['url']).hexdigest()
+			hash = hashlib.sha224(listing['url']).hexdigest()
 			listings[hash]=listing
 	
 	return listings
@@ -101,9 +103,10 @@ def parse_listing(result):
 		listing['size'] = number_pattern.search(size).group(0)
 
 	listing['price'] = -1
-	price =  result.select('.price')[0].get_text().strip()
-	if len(price)>0:
-		listing['price'] = str(number_pattern.search(price).group(0)).replace('.','')
+	price = result.select('.price')[0].get_text().strip().replace('.','').replace('.','')
+	if len(price)>0 and number_pattern.match(price):
+		listing['price'] = str(number_pattern.search(price).group(0))
+	
 
 	address = result.select('.location')[0].get_text().replace("\r\n","").split()
 	listing['bezirk'] = address[0]
@@ -114,14 +117,29 @@ def parse_listing(result):
 
 class Configuration(object):
 	pickle_db = 'willhaben.p'
-	categories = ['http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1020-leopoldstadt?areaId=117224&parent_areaid=900&page=1'
+	categories = [
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1010-innere-stadt?areaId=117223&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1020-leopoldstadt?areaId=117224&parent_areaid=900&page=1'
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1030-landstrasse?areaId=117225&parent_areaid=900&page=1',
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1040-wieden?areaId=117226&parent_areaid=900&page=1',
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1050-margareten?areaId=117227&parent_areaid=900&page=1',
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1060-mariahilf?areaId=117228&parent_areaid=900&page=1',
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1070-neubau?areaId=117229&parent_areaid=900&page=1',
 				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1080-josefstadt?areaId=117230&parent_areaid=900&page=1',
-				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1090-alsergrund?areaId=117231&parent_areaid=900&page=1']
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1090-alsergrund?areaId=117231&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1100-favoriten?areaId=117232&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1110-simmering?areaId=117233&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1120-meidling?areaId=117234&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1130-hietzing?areaId=117235&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1140-penzing?areaId=117236&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1150-rudolfsheim-fuenfhaus?areaId=117237&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1160-ottakring?areaId=117238&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1170-hernals?areaId=117239&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1180-waehring?areaId=117240&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1190-doebling?areaId=117241&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1200-brigittenau?areaId=117242&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1210-floridsdorf?areaId=117243&parent_areaid=900&page=1',
+				'http://www.willhaben.at/iad/immobilien/mietwohnungen/wien/wien-1220-donaustadt?areaId=117244&parent_areaid=900&page=1',]
 
 def log(message):
 	print str(datetime.datetime.utcnow()) + ' - ' + message
