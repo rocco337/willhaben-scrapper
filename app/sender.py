@@ -79,8 +79,8 @@ class Filter(object):
 class Configuration(object):
 	listings_db = 'willhaben.p'
 	sent_items_db = 'willhaben_sent.p'
-	mail_recivers = ['roko.bobic@gmail.com']
-	mail_sender = 'roko.bobic@gmail.com'
+	mail_recivers = ['email@gmail.com']
+	mail_sender = 'email@gmail.com'
 	
 def log(message):
 	print str(datetime.datetime.utcnow()) + ' - ' + message
